@@ -1,5 +1,5 @@
-#  Android Push Notification 流程介绍 
-
+#  Push Notification 流程介绍 
+基于AndroidPN 改造的消息推送，支持自定义协议
 ## 消息处理过程 ##
 * 客户端服务器交互初始化
 * 用户登录认证
