@@ -62,19 +62,20 @@ public class NotificationController extends MultiActionController {
                 "message");
         String uri = ServletRequestUtils.getStringParameter(request, "uri");
         String type = ServletRequestUtils.getStringParameter(request, "type");
+        String attrs = ServletRequestUtils.getStringParameter(request, "attrs");
 
         String apiKey = Config.getString("apiKey", "");
         logger.debug("apiKey=" + apiKey);
         //在线用户
         if (broadcast.equalsIgnoreCase("Y")) {
-            notificationManager.sendBroadcast(apiKey,type, title, message, uri);
+            notificationManager.sendBroadcast(apiKey,type, title, message, uri,attrs);
         //所有用户
         }else if (broadcast.equalsIgnoreCase("A")) {
-            notificationManager.sendAllBroadcast(apiKey,type, title, message, uri);
+            notificationManager.sendAllBroadcast(apiKey,type, title, message, uri,attrs);
         //指定用户
         }else {
             notificationManager.sendNotifications(apiKey,type, username, title,
-                    message, uri,hasSession);
+                    message, uri,attrs,hasSession);
         }
         if(request.getParameter("isApi") != null){
             response.getWriter().write("success");

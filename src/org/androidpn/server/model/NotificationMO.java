@@ -31,7 +31,7 @@ public class NotificationMO implements Serializable {
 	public NotificationMO(){
 	}
 	
-	public NotificationMO(String apiKey,String type,String title,String message,String uri){
+	public NotificationMO(String apiKey,String type,String title,String message,String uri,String attrs){
 		this.apiKey = apiKey;
 		this.title = title;
 		this.message = message;
@@ -39,6 +39,7 @@ public class NotificationMO implements Serializable {
 		this.createTime = new Timestamp(System.currentTimeMillis());
 		this.updateTime = new Timestamp(System.currentTimeMillis());
         this.type = type;
+        this.attrs = attrs;
 	}
 	
 	@Id
@@ -75,7 +76,10 @@ public class NotificationMO implements Serializable {
     //comment '0: 未发送 1：已发送 2：已接收 3：已查看'
     @Column(name = "status", length = 10)
     private String status;
-    
+
+    @Column(name = "attrs", length = 10)
+    private String attrs;
+
     @Column(name = "created_time",updatable = false)
     private Timestamp createTime ;
     
@@ -186,5 +190,13 @@ public class NotificationMO implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getAttrs() {
+        return attrs;
+    }
+
+    public void setAttrs(String attrs) {
+        this.attrs = attrs;
     }
 }

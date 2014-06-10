@@ -17,9 +17,7 @@
  */
 package org.androidpn.server.xmpp.push;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import org.androidpn.server.model.NotificationMO;
 import org.androidpn.server.model.User;
@@ -79,15 +77,15 @@ public class NotificationManager {
 	 *            the uri
 	 */
 	public void sendBroadcast(String apiKey,String type, String title, String message,
-			String uri) {
+			String uri,String attrs) {
 		log.debug("sendBroadcast()...");
 		List<NotificationMO> notificationMOs = new ArrayList<NotificationMO>();
-		IQ notificationIQ = createNotificationIQ(apiKey,type, title, message, uri);
+		IQ notificationIQ = createNotificationIQ(apiKey,type, title, message, uri,attrs);
 
 		for (ClientSession session : sessionManager.getSessions()) {
 			// 创建通知对象
 			NotificationMO notificationMO = new NotificationMO(apiKey,type, title,
-					message, uri);
+					message, uri,attrs);
 			try {
 				notificationMO.setUsername(session.getUsername());
 				notificationMO.setClientIp(session.getHostAddress());
@@ -119,12 +117,12 @@ public class NotificationManager {
 	
 	//给所有用户发送通知
 	public void sendAllBroadcast(String apiKey,String type, String title, String message,
-			String uri) {
+			String uri,String attrs) {
 		//生产推送通知对象，之所以移到这里来，是为了保证同一批次推送的通知ID是一样的。没什么作用
-		IQ notificationIQ = createNotificationIQ(apiKey,type, title, message, uri);
+		IQ notificationIQ = createNotificationIQ(apiKey,type, title, message, uri,attrs);
 		List<User> list = userService.getUsers();
 		for (User user : list) {
-			this.sendNotificationToUser(apiKey,type, user.getUsername(), title, message, uri, notificationIQ, false);
+			this.sendNotificationToUser(apiKey,type, user.getUsername(), title, message, uri,attrs, notificationIQ, false);
 		}
 		
 	}
@@ -142,7 +140,7 @@ public class NotificationManager {
 	 *            the uri
 	 */
 	public void sendNotificationToUser(String apiKey,String type, String username,
-                                       String title, String message, String uri, IQ notificationIQ, boolean hasSession) {
+                                       String title, String message, String uri,String attrs, IQ notificationIQ, boolean hasSession) {
 		log.debug("sendNotificationToUser()...");
 		ClientSession session = sessionManager.getSession(username);
         //用户未在线
@@ -151,7 +149,7 @@ public class NotificationManager {
         }
 		// 创建通知对象
 		NotificationMO notificationMO = new NotificationMO(apiKey,type, title,
-				message, uri);
+				message, uri,attrs);
 		//接收人
 		notificationMO.setUsername(username);
 		// 将消息的ID添加到通知对象
@@ -184,7 +182,7 @@ public class NotificationManager {
 	 * Creates a new notification IQ and returns it.
 	 */
 	private IQ createNotificationIQ(String apiKey,String type, String title,
-			String message, String uri) {
+			String message, String uri,String strAttrs) {
 		Random random = new Random();
 		String id = Integer.toHexString(random.nextInt());
 		// String id = String.valueOf(System.currentTimeMillis());
@@ -198,11 +196,11 @@ public class NotificationManager {
         if(StringUtils.isNotEmpty(title))
 		    notification.addElement("title").setText(title);
         if(StringUtils.isNotEmpty(message)) {
-            notification.add(createMessage(message));
+            notification.addElement("message").setText(message);
         }
         if(StringUtils.isNotEmpty(uri))
 		    notification.addElement("uri").setText(uri);
-
+        createAttrs(notification,strAttrs);
 		IQ iq = new IQ();
 		iq.setType(IQ.Type.set);
 		iq.setChildElement(notification);
@@ -210,41 +208,36 @@ public class NotificationManager {
 		return iq;
 	}
 
-    private static  Element createMessage(String message){
-        Element messageElement ;
-        try {
-            if(message.startsWith("<") && message.endsWith(">")){
-                messageElement = DocumentHelper.parseText(message).getRootElement();
-            }
-            else {
-                messageElement = DocumentHelper.createElement("message");
-                messageElement.setText(message);
-            }
-            return messageElement;
-        } catch (DocumentException e) {
-            throw new IllegalArgumentException("wrong xml message:" + message);
+    private static  void createAttrs(Element notification,String strAttrs){
+        Map<String,String> attrs = CopyMessageUtil.line2Map(strAttrs);
+        if(attrs.isEmpty())return;
+        Iterator<String> keys = attrs.keySet().iterator();
+        while (keys.hasNext()) {
+            String name = keys.next();
+            notification.addElement("attr").addAttribute("name",name).setText(attrs.get(name));
         }
+
     }
 	
 	public void sendNotifications(String apiKey,String type, String username,
-			String title, String message, String uri,boolean hasSession){
+			String title, String message, String uri,String attrs,boolean hasSession){
 		//生产推送通知对象，之所以移到这里来，是为了保证同一批次推送的通知ID是一样的。没什么作用
-		IQ notificationIQ = createNotificationIQ(apiKey,type, title, message, uri);
+		IQ notificationIQ = createNotificationIQ(apiKey,type, title, message, uri,attrs);
 		//如果是多个用户，根据“;”分隔 ，循环发送
 		if(username.indexOf(";")!=-1){
 			String[] users = username.split(";");
 			for (String user : users) {
-				this.sendNotificationToUser(apiKey,type, user, title, message, uri, notificationIQ, hasSession);
+				this.sendNotificationToUser(apiKey,type, user, title, message, uri,attrs, notificationIQ, hasSession);
 			}
 		}else{
-			this.sendNotificationToUser(apiKey,type, username, title, message, uri, notificationIQ, hasSession);
+			this.sendNotificationToUser(apiKey,type, username, title, message, uri,attrs, notificationIQ, hasSession);
 		}
 	}
 	
 	//发送离线消息
 	public void sendOfflineNotification(NotificationMO notificationMO ) {
 		log.debug("sendOfflineNotifcation()...");
-		IQ notificationIQ = createNotificationIQ(notificationMO.getApiKey(),notificationMO.getType(), notificationMO.getTitle(), notificationMO.getMessage(), notificationMO.getUri());
+		IQ notificationIQ = createNotificationIQ(notificationMO.getApiKey(),notificationMO.getType(), notificationMO.getTitle(), notificationMO.getMessage(), notificationMO.getUri(),notificationMO.getAttrs());
 		//将生产通知ID替换成原来的ID
 		notificationIQ.setID(notificationMO.getMessageId());
 		ClientSession session = sessionManager.getSession(notificationMO.getUsername());
@@ -267,6 +260,13 @@ public class NotificationManager {
 
 
     public static void main(String[] args) {
-        System.out.println(createMessage("message><user>234243</user></message>").asXML());
+        NotificationManager manager = new NotificationManager();
+        IQ iq = manager.createNotificationIQ("a232","1","title","message",null,"key1=v1;key2=v2");
+        System.out.println(iq.getChildElement().asXML());
+        iq = manager.createNotificationIQ("a232","1","title","message",null,"key1=v1");
+        System.out.println(iq.getChildElement().asXML());
+        System.out.println(iq.getChildElement().asXML());
+        iq = manager.createNotificationIQ("a232","1","title","message",null,null);
+        System.out.println(iq.getChildElement().asXML());
     }
 }

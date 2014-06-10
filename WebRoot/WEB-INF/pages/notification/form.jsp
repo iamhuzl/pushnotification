@@ -47,18 +47,16 @@
 	<td>通知消息内容:</td>
 	<td><textarea id="message" name="message" style="width:380px; height:80px;" >恭喜您获得了您参加了我爱幻方活动中获得了iPhone5S大奖</textarea></td>
 </tr>
-<%--
-<tr>
-	<td>Ticker:</td>
-	<td><input type="text" id="ticker" name="ticker" value="" style="width:380px;" /></td>
-</tr>
---%>
 <tr>
 	<td>URI:</td>
 	<td><input type="text" id="uri" name="uri" value="http://192.168.167.131:8080/PushNotification/notification.do" style="width:380px;" />
 	    <br/><span style="font-size:0.8em">ex) http://www.dokdocorea.com, geo:37.24,131.86, tel:111-222-3333</span>
 	</td>
 </tr>
+    <tr>
+    	<td>扩展信息:</td>
+    	<td><textarea id="attrs" name="attrs" style="width:380px; height:80px;" >key1=value1;key2=value2</textarea></td>
+    </tr>
 <tr>
 	<td>&nbsp;</td>
 	<td><input type="submit" value=" 发 送 " /></td>
